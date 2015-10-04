@@ -10,8 +10,9 @@ int[] soldProduct = {0, 0, 0, 0, 0};
 int changeValue = 0;
 int[] changeCoin = {0, 0, 0};
 int[] coinValue = {1, 5, 10};
-int[] coinNum = {1, 1, 199};
+int[] coinNum = {10, 10, 10};
 
+int cancel = 0;
 int error = 0;
 int page = 1;
 
@@ -28,21 +29,37 @@ void draw() {
   } else if (page == 2) {
     admin_page();
   }
-  
-  text(pmouseX+","+pmouseY,mouseX,mouseY);
+
+  text(pmouseX+","+pmouseY, mouseX, mouseY);
 }
 
 
 
 void display_page() {
   vendingMachine(20, 15);
-  changeToAdmin_button();
+  changePage(page);
   coin(295);
 }
 
 void admin_page() {
   admin_display();
-  changeToDisplay_button();
+  changePage(page);
+}
+void coin(int y) {
+  int num = 0;
+  while (num < coinValue.length) {
+    if (coinNum[num] >= 200) {
+      fill(#FF0000);
+    } else {
+      fill(255);
+    }
+    rect(720, y, 100, 40, 20);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text(coinValue[num], 720+(100/2), y+(40/2));
+    y += 50;
+    num++;
+  }
 }
 
 void vendingMachine(int x, int y) {
@@ -59,14 +76,13 @@ void vendingMachine(int x, int y) {
     showProductNum(productNum_posX, y+20, productNum[product]);
     showProduct(product_posX, y+50, productName[product]);    
     buttonBuy(buttonX, y+200, product);
-    //button_posX[product] = buttonX;
     product++;
     product_posX += 130;
     buttonX += 130;
     productNum_posX += 130;
   }
   outletBox(x+20, y+250);
-  insertcoin_box(x+280,y+250);
+  insertcoin_box(x+280, y+250);
   statusDisplay(x+450, y+250);
   //text("You shall not"
 }
@@ -101,13 +117,12 @@ void showProduct(int x, int y, String productName) {
 
 
 void buttonBuy(int x, int y, int i) {
-  //int y = 300;
   final int buttonWidth = 60, buttonHeight = 30;
   int buttonColor;
   int available = #00FF00;
   int unavailable = 255;
 
-  if (coin>=productPrice[i] && productNum[i] > 0 && product_in_outletBox == 0) {
+  if (coin>=productPrice[i] && productNum[i] > 0 && product_in_outletBox == 0 && error == 0) {
     buttonColor = available;
   } else {
     buttonColor = unavailable;
@@ -120,47 +135,75 @@ void buttonBuy(int x, int y, int i) {
   textAlign(CENTER, CENTER);
   text(productPrice[i], x+(buttonWidth/2), y+(buttonHeight/2.5));
 
-  if (product_in_outletBox == 0 && mousePressed && coin >= productPrice[i] && productNum[i] > 0 && (mouseX >= x && mouseX <= x+buttonWidth) && (mouseY >= y && mouseY <= y+buttonHeight)) {
-    coin -= productPrice[i];
+  if (error != 2 && product_in_outletBox == 0 && coin >= productPrice[i] && productNum[i] > 0 && mousePressed && (mouseX >= x && mouseX <= x+buttonWidth) && (mouseY >= y && mouseY <= y+buttonHeight)) {
     changeValue = coin;
-    buy(changeValue, i);
-    coin = 0;
+    changeValue -= productPrice[i];
+    change_cal(changeValue);
+    int coinType = 0;
+    while (coinType < coinValue.length) {
+      if (coinNum[coinType] < changeCoin[coinType]) {
+        error = 1;
+      }
+      coinType++;
+    }
+    if (error == 0) {
+      coinNum[0] -= changeCoin[0];
+      coinNum[1] -= changeCoin[1];
+      coinNum[2] -= changeCoin[2];
+      productNum[i] -= 1;
+      soldProduct[i] += 1;
+      product_in_outletBox = 1;
+      coin = 0;
+    }
   }
 }
-void buy(int change, int i) {
+void change_cal(int change) {
   if (coinNum[0] < (change%10)%5) {
     error = 1;
-    product_in_outletBox = 0;
-  } else {
-    if (coinNum[2] < change/10) {
-      if (coinNum[1] < change/5) {
-        changeCoin[2] = coinNum[2];
-        changeCoin[1] = coinNum[1];
-        change -= (changeCoin[2]*coinValue[2])+(changeCoin[1]*coinValue[1]);
-        changeCoin[0] = change;
-      } else {
-        changeCoin[2] = coinNum[2];
-        change -= changeCoin[2]*coinValue[2];
-        changeCoin[1] = change/5;
-        changeCoin[0] = change%5;
-      }
-    } else {
+  } else if (coinNum[2] > change/10) {
+    if (coinNum[1] > (change%10)/5) {
       changeCoin[0] = (change%10)%5;
       changeCoin[1] = (change%10)/5;
       changeCoin[2] = change/10;
+    } else if (coinNum[1] < (change%10)/5) {
+      changeCoin[2] = change/10;
+      changeCoin[1] = coinNum[1];
+      change -= (changeCoin[2]*coinValue[2])+(changeCoin[1]*coinValue[1]);
+
+      changeCoin[0] = change;
     }
-    coinNum[2] -= changeCoin[2];
-    coinNum[1] -= changeCoin[1];
-    coinNum[0] -= changeCoin[0];
-    productNum[i] -= 1;
-    soldProduct[i] += 1;
-    product_in_outletBox = 1;
+  } else if (coinNum[2] < change/10) {
+    if (coinNum[1] > change/5) {
+      changeCoin[2] = coinNum[2];
+      change -= changeCoin[2]*coinValue[2];
+      changeCoin[1] = change/5;
+      changeCoin[0] = change%5;
+    } else if (coinNum[1] < change/5) {
+      changeCoin[2] = coinNum[2];
+      changeCoin[1] = coinNum[1];
+      change -= (changeCoin[2]*coinValue[2])+(changeCoin[1]*coinValue[1]);
+      changeCoin[0] = change;
+    }
+  } else if (change <= 10) {
+    if (change >= 5 && coinNum[1] > 0) {
+      changeCoin[2] = 0;
+      changeCoin[1] = 1;
+      changeCoin[0] = change%5;
+    } else { 
+      changeCoin[2] = 0;
+      changeCoin[1] = 0;
+      changeCoin[0] = change;
+    }
   }
 }
+
+
+
+
 void outletBox(int x, int y) {
   fill(0, 200);
   rect(x, y, 240, 150);
-  if (product_in_outletBox == 1 && mousePressed && (mouseX >= x && mouseX <= x+240) && (mouseY >= y && mouseY <= y+150)) {
+  if (error != 2 && product_in_outletBox == 1 && mousePressed && (mouseX >= x && mouseX <= x+240) && (mouseY >= y && mouseY <= y+150)) {
     product_in_outletBox = 0;
   }
   if (product_in_outletBox ==1 ) {
@@ -168,9 +211,6 @@ void outletBox(int x, int y) {
     productInOutletBox(x+30, (y+150)-35);
   }
 }
-
-
-
 void productInOutletBox(int x, int y) {
   fill(255);
   int productWidth = 180, productWeight = 30;
@@ -183,15 +223,15 @@ void productInOutletBox(int x, int y) {
   }
 }
 
-void insertcoin_box(int x,int y){
+void insertcoin_box(int x, int y) {
   fill(100);
-  rect(x,y,150,150);
-  ellipse(x+35,y+40,50,50);
+  rect(x, y, 150, 150);
+  ellipse(x+35, y+40, 50, 50);
   fill(0);
-  rect(x+33,y+20,4,40);
-  controlButton(x+70,y+20,70,40,#FF0000,"CANCEL",255);
+  rect(x+33, y+20, 4, 40);
+  controlButton(x+70, y+20, 70, 40, #FF0000, "CANCEL", 255);
   fill(#88FFFF);
-  rect(x+10,y+75,130,65);
+  rect(x+10, y+75, 130, 65);
 }
 
 
@@ -202,56 +242,28 @@ void statusDisplay(int x, int y) {
   rect(x, y, display_width, display_height);
   fill(255);
   textAlign(CENTER, CENTER);
-  if (coin == 0 && product_in_outletBox == 0 && error == 0) {
+  if (coin == 0 && cancel == 0 && product_in_outletBox == 0 && error == 0) {
     text("Please Insert Coin", x+(display_width/2), y+(display_height/2));
-  } else if (coin > 0 && product_in_outletBox == 0) {
+  } else if (coin > 0 && cancel == 0 && error == 0 &&  product_in_outletBox == 0) {
     text("Coin "+coin, x+(display_width/2), y+(display_height/2));
   } else if (product_in_outletBox == 1) {
     text("Change "+changeValue+" Baht\n| 10 coin : "+changeCoin[2]+" | 5  coin : "+changeCoin[1]+" |\n| 1  coin : "+changeCoin[0]+" |", x+(display_width/2), y+(display_height/3));
     fill(#FFFF00);
     text("Please Get Product !!!", x+(display_width/2), y+(display_height-20));
-  } else if (error == 1) {
+  } else if (error == 1 && cancel == 0) {
     fill(#FF0000);
     text("Error !!\nNot Enough Coin", x+(display_width/2), y+(display_height/2));
+  } else if (error == 2) {
+    fill(#FF0000);
+    text("Error !!\nLen Here Arai Isus!!", x+(display_width/2), y+(display_height/2));
+  } else if (cancel == 1) {
+    text("Change "+changeValue+" Baht\n| 10 coin : "+changeCoin[2]+" | 5  coin : "+changeCoin[1]+" |\n| 1  coin : "+changeCoin[0]+" |", x+(display_width/2), y+(display_height/3));
+    fill(#FFFF00);
+    text("Please Press Any Key", x+(display_width/2), y+(display_height-20));
   }
 }
 
-void changeToAdmin_button() {
-  strokeWeight(3);
-  fill(0);
-  rect(700, 20, 140, 50);
-  fill(255);
-  textAlign(CENTER, CENTER);
-  text("Admin", 770, 45);
-}
 
-
-void changeToDisplay_button() {
-  strokeWeight(3);
-  fill(0);
-  rect(700, 20, 140, 50);
-  fill(255);
-  textAlign(CENTER, CENTER);
-  text("Display", 770, 45);
-}
-
-
-void coin(int y) {
-  int num = 0;
-  while (num < coinValue.length) {
-    if (coinNum[num] >= 200) {
-      fill(#FF0000);
-    } else {
-      fill(255);
-    }
-    rect(720, y, 100, 40, 20);
-    fill(0);
-    textAlign(CENTER, CENTER);
-    text(coinValue[num], 720+(100/2), y+(40/2));
-    y += 50;
-    num++;
-  }
-}
 void mousePressed() {
   /****************************************** Change Page ******************************************/
   if (page == 1 &&(mouseX >= 700 && mouseX <= 840)&&(mouseY >= 20 && mouseY <= 70)) {
@@ -260,77 +272,112 @@ void mousePressed() {
     page = 1;
   }
   /************************************************************************************************/
-
-  /******************************************* Insert Coin Button *******************************************/
-  int coinType_insert = 0;
-  int insertcoin_posY = 295;
-  while (coinType_insert < coinValue.length) {
-    if (error == 0 && coinNum[coinType_insert] < 200 && product_in_outletBox == 0 && mouseX >= 700 && mouseX <= 840 && mouseY >= insertcoin_posY && mouseY <= insertcoin_posY+40) {
-      coin += coinValue[coinType_insert];
-      coinNum[coinType_insert] += 1;
-    }
-    insertcoin_posY += 50;
-    coinType_insert++;
-  }
-  /*********************************************************************************************************/
-  if(error == 1 && mouseX >= 370 && mouseX <= 440 && mouseY >= 285 && mouseY <= 325){
-    error = 0;
-  }
-
-  if (page == 2) {
-    /***************************************************** Number of Product Control *****************************************************/
-    int product = 0;
-    int numControl_buttonY = 50;
-    while (product < productNum.length) {
-      if (mouseX >= 20 && mouseX <= 80 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
-        productNum[product] = 0;
-      } else if (mouseX >= 85 && mouseX <= 105 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
-        productNum[product] -= 1;
-        if (productNum[product] <= 0) {
-          productNum[product] = 0;
+  if (page==1) {
+    if (error != 2) {
+      /******************************************* Insert Coin Button *******************************************/
+      int coinType_insert = 0;
+      int insertcoin_posY = 295;
+      while (coinType_insert < coinValue.length) {
+        if (error == 0 && coinNum[coinType_insert] < 200 && product_in_outletBox == 0 && mouseX >= 700 && mouseX <= 840 && mouseY >= insertcoin_posY && mouseY <= insertcoin_posY+40) {
+          coin += coinValue[coinType_insert];
+          coinNum[coinType_insert] += 1;
         }
-      } else if (mouseX >= 165 && mouseX <= 185 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
-        productNum[product] += 1;
-        if (productNum[product] >= 100) {
+        insertcoin_posY += 50;
+        coinType_insert++;
+      }
+      /*********************************************************************************************************/
+
+      /******************************************** Cancel ********************************************/
+      if (cancel == 0 && coin > 0 && mouseX >= 370 && mouseX <= 440 && mouseY >= 285 && mouseY <= 325) {
+        cancel = 1;
+        changeValue = coin;
+        change_cal(changeValue);
+        coinNum[0] -= changeCoin[0];
+        coinNum[1] -= changeCoin[1];
+        coinNum[2] -= changeCoin[2];
+        int coinType_error = 0;
+        while (coinType_error < coinValue.length) {
+          if (coinNum[coinType_error] < 0) {
+            error = 2;
+          }
+          coinType_error++;
+        }
+      }
+      /**********************************************************************************************/
+    }
+  }
+  if (page == 2) {
+    if (error != 2) {
+      /***************************************************** Number of Product Control *****************************************************/
+      int product = 0;
+      int numControl_buttonY = 50;
+      while (product < productNum.length) {
+        if (mouseX >= 20 && mouseX <= 80 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
+          productNum[product] = 0;
+        } else if (mouseX >= 85 && mouseX <= 105 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
+          productNum[product] -= 1;
+          if (productNum[product] <= 0) {
+            productNum[product] = 0;
+          }
+        } else if (mouseX >= 165 && mouseX <= 185 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
+          productNum[product] += 1;
+          if (productNum[product] >= 100) {
+            productNum[product] = 100;
+          }
+        } else if (mouseX >= 190 && mouseX <= 250 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
           productNum[product] = 100;
         }
-      } else if (mouseX >= 190 && mouseX <= 250 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+20) {
-        productNum[product] = 100;
+        numControl_buttonY += 35;
+        product++;
       }
-      numControl_buttonY += 35;
-      product++;
-    }
-    int[] empty = {0, 0, 0, 0, 0};
-    int[] full = {100, 100, 100, 100, 100};
-    if (mouseX >= 20 && mouseX <= 110 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+30) {
-      productNum = empty;
-    } else if (mouseX >= 160 && mouseX <= 250 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+30) {
-      productNum = full;
-    } 
-    /*************************************************************************************************************************************/
+      int[] empty = {0, 0, 0, 0, 0};
+      int[] full = {100, 100, 100, 100, 100};
+      if (mouseX >= 20 && mouseX <= 110 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+30) {
+        productNum = empty;
+      } else if (mouseX >= 160 && mouseX <= 250 && mouseY >= numControl_buttonY && mouseY <= numControl_buttonY+30) {
+        productNum = full;
+      } 
+      /*************************************************************************************************************************************/
 
-    /********************************************************* Number of Coin Control *********************************************************/
-    int coinType_control = 0;
-    int coinControl_buttonY = 300;
-    while (coinType_control < coinValue.length) {
-      if (mouseX >= 185 && mouseX <= 205 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
-        coinNum[coinType_control] -= 1;
-        if (coinNum[coinType_control] <= 0) {
-          coinNum[coinType_control] = 0;
+      /********************************************************* Number of Coin Control *********************************************************/
+      int coinType_control = 0;
+      int coinControl_buttonY = 300;
+      while (coinType_control < coinValue.length) {
+        if (mouseX >= 185 && mouseX <= 205 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
+          coinNum[coinType_control] -= 1;
+          if (coinNum[coinType_control] <= 0) {
+            coinNum[coinType_control] = 0;
+          }
+        } else if (mouseX >= 210 && mouseX <= 230 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
+          coinNum[coinType_control] += 1;
+          if (coinNum[coinType_control] >= 200) {
+            coinNum[coinType_control] = 200;
+          }
+        } else if (coinNum[coinType_control] > 50 && mouseX >= 235 && mouseX <= 305 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
+          coinNum[coinType_control] = 50;
         }
-      } else if (mouseX >= 210 && mouseX <= 230 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
-        coinNum[coinType_control] += 1;
-        if (coinNum[coinType_control] >= 200) {
-          coinNum[coinType_control] = 200;
-        }
-      } else if (coinNum[coinType_control] > 50 && mouseX >= 235 && mouseX <= 305 && mouseY >= coinControl_buttonY && mouseY <= coinControl_buttonY+20) {
-        coinNum[coinType_control] = 50;
+        coinControl_buttonY += 30;
+        coinType_control++;
       }
-      coinControl_buttonY += 30;
-      coinType_control++;
+      /*****************************************************************************************************************************************/
     }
-    /*****************************************************************************************************************************************/
   }
+}
+void keyPressed() {
+  if (cancel == 1 && error != 2) {
+    error = 0;
+    cancel = 0;
+    coin = 0;
+  }
+}
+void changePage(int pageNum) {
+  String[] text = {"Admin", "Display"};
+  strokeWeight(3);
+  fill(0);
+  rect(700, 20, 140, 50);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text(text[pageNum-1], 770, 45);
 }
 
 
