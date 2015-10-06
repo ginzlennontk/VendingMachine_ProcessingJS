@@ -2,7 +2,7 @@ int coin = 0;
 
 String[] productName = {"Math 1", "ProFun", "Physic 1", "Man & Society", "English"};
 int product_in_outletBox = 0;
-int[] productNum = {4, 2, 5, 5, 1};
+int[] productNum = {50, 50, 50, 50, 50};
 int[] productPrice = {59, 70, 45, 39, 45};
 
 int[] soldProduct = {0, 0, 0, 0, 0};
@@ -10,30 +10,28 @@ int[] soldProduct = {0, 0, 0, 0, 0};
 int changeValue = 0;
 int[] changeCoin = {0, 0, 0};
 int[] coinValue = {1, 5, 10};
-int[] coinNum = {10, 10, 10};
+int[] coinNum = {50, 50, 50};
+
+int history = 0;
+String[] history_name = {"", "", "", "", "", ""};
+int[] history_price = {0, 0, 0, 0, 0, 0};
+int[] history_insertCoin = {0, 0, 0, 0, 0, 0};
+int[] history_change = {0, 0, 0, 0, 0, 0};
 
 int cancel = 0;
 int error = 0;
 int page = 1;
 
-void setup() {
-  size(850, 450);
-}
-
 void draw() {
+  size(850, 450);
   background(#DDFFFF);
   textSize(15);
-
   if (page == 1) {
     display_page();
   } else if (page == 2) {
     admin_page();
   }
-
-  text(pmouseX+","+pmouseY, mouseX, mouseY);
 }
-
-
 
 void display_page() {
   vendingMachine(20, 15);
@@ -44,7 +42,11 @@ void display_page() {
 void admin_page() {
   admin_display();
   changePage(page);
+  resetSim_button();
+  resetMachine_button();
 }
+
+
 void coin(int y) {
   int num = 0;
   while (num < coinValue.length) {
@@ -64,7 +66,7 @@ void coin(int y) {
 
 void vendingMachine(int x, int y) {
   int machineWidth = 670, machineHeight = 420;
-  fill(#FF99FF);
+  fill(#FF2288);
   rect(x, y, machineWidth, machineHeight);
 
   int productNum_posX = x+55;
@@ -88,9 +90,7 @@ void vendingMachine(int x, int y) {
 }
 
 
-
 void showProductNum(int x, int y, int productNum) {
-  //int y = 70;
   int productNum_width = 40, productNum_height = 20;
   strokeWeight(3);
   fill(0);
@@ -101,9 +101,7 @@ void showProductNum(int x, int y, int productNum) {
 }
 
 
-
 void showProduct(int x, int y, String productName) { 
-  //int y = 120;
   final int productWidth = 110, productHeight = 140;
   fill(255);
   strokeWeight(3);
@@ -114,15 +112,13 @@ void showProduct(int x, int y, String productName) {
 }
 
 
-
-
 void buttonBuy(int x, int y, int i) {
   final int buttonWidth = 60, buttonHeight = 30;
   int buttonColor;
   int available = #00FF00;
   int unavailable = 255;
 
-  if (coin>=productPrice[i] && productNum[i] > 0 && product_in_outletBox == 0 && error == 0) {
+  if (coin>=productPrice[i] && productNum[i] > 0 && product_in_outletBox == 0 && error == 0 && cancel == 0) {
     buttonColor = available;
   } else {
     buttonColor = unavailable;
@@ -135,9 +131,11 @@ void buttonBuy(int x, int y, int i) {
   textAlign(CENTER, CENTER);
   text(productPrice[i], x+(buttonWidth/2), y+(buttonHeight/2.5));
 
-  if (error != 2 && product_in_outletBox == 0 && coin >= productPrice[i] && productNum[i] > 0 && mousePressed && (mouseX >= x && mouseX <= x+buttonWidth) && (mouseY >= y && mouseY <= y+buttonHeight)) {
+  if (cancel == 0 && error != 2 && product_in_outletBox == 0 && coin >= productPrice[i] && productNum[i] > 0 && mousePressed && (mouseX >= x && mouseX <= x+buttonWidth) && (mouseY >= y && mouseY <= y+buttonHeight)) {
     changeValue = coin;
+    history_insertCoin[history] = coin;
     changeValue -= productPrice[i];
+    history_change[history] = changeValue;
     change_cal(changeValue);
     int coinType = 0;
     while (coinType < coinValue.length) {
@@ -153,10 +151,25 @@ void buttonBuy(int x, int y, int i) {
       productNum[i] -= 1;
       soldProduct[i] += 1;
       product_in_outletBox = 1;
+      history_name[history] = productName[i];
+      history_price[history] = productPrice[i];
+      history += 1;
+      if (history == 6) {
+        int num = 0;
+        while (num < history_name.length-1) {
+          history_name[num] = history_name[num+1];
+          history_price[num] = history_price[num+1];
+          history_insertCoin[num] = history_insertCoin[num+1];
+          history_change[num] = history_change[num+1];
+          num++;
+        }
+        history = 5;
+      }
       coin = 0;
     }
   }
 }
+
 void change_cal(int change) {
   if (coinNum[0] < (change%10)%5) {
     error = 1;
@@ -169,7 +182,6 @@ void change_cal(int change) {
       changeCoin[2] = change/10;
       changeCoin[1] = coinNum[1];
       change -= (changeCoin[2]*coinValue[2])+(changeCoin[1]*coinValue[1]);
-
       changeCoin[0] = change;
     }
   } else if (coinNum[2] < change/10) {
@@ -190,14 +202,15 @@ void change_cal(int change) {
       changeCoin[1] = 1;
       changeCoin[0] = change%5;
     } else { 
+      if (coinNum[0] < change) {
+        error = 2;
+      }
       changeCoin[2] = 0;
       changeCoin[1] = 0;
       changeCoin[0] = change;
     }
   }
 }
-
-
 
 
 void outletBox(int x, int y) {
@@ -224,6 +237,7 @@ void productInOutletBox(int x, int y) {
 }
 
 void insertcoin_box(int x, int y) {
+  strokeWeight(3);
   fill(100);
   rect(x, y, 150, 150);
   ellipse(x+35, y+40, 50, 50);
@@ -255,7 +269,7 @@ void statusDisplay(int x, int y) {
     text("Error !!\nNot Enough Coin", x+(display_width/2), y+(display_height/2));
   } else if (error == 2) {
     fill(#FF0000);
-    text("Error !!\nLen Here Arai Isus!!", x+(display_width/2), y+(display_height/2));
+    text("Please Press CANCEL", x+(display_width/2), y+(display_height/2));
   } else if (cancel == 1) {
     text("Change "+changeValue+" Baht\n| 10 coin : "+changeCoin[2]+" | 5  coin : "+changeCoin[1]+" |\n| 1  coin : "+changeCoin[0]+" |", x+(display_width/2), y+(display_height/3));
     fill(#FFFF00);
@@ -266,14 +280,16 @@ void statusDisplay(int x, int y) {
 
 void mousePressed() {
   /****************************************** Change Page ******************************************/
-  if (page == 1 &&(mouseX >= 700 && mouseX <= 840)&&(mouseY >= 20 && mouseY <= 70)) {
+  if (page == 1 && coin == 0 && cancel == 0 && product_in_outletBox == 0 && error == 0 && (mouseX >= 700 && mouseX <= 840)&&(mouseY >= 20 && mouseY <= 70)) {
     page = 2;
+  } else if (coin > 0 && cancel == 0 && (mouseX >= 700 && mouseX <= 840)&&(mouseY >= 20 && mouseY <= 70)) {
+    error = 2;
   } else if (page == 2 && (mouseX >= 700 && mouseX <= 840)&&(mouseY >= 20 && mouseY <= 70)) {
     page = 1;
   }
   /************************************************************************************************/
   if (page==1) {
-    if (error != 2) {
+    //if (error != 2) {
       /******************************************* Insert Coin Button *******************************************/
       int coinType_insert = 0;
       int insertcoin_posY = 295;
@@ -286,25 +302,34 @@ void mousePressed() {
         coinType_insert++;
       }
       /*********************************************************************************************************/
-
-      /******************************************** Cancel ********************************************/
-      if (cancel == 0 && coin > 0 && mouseX >= 370 && mouseX <= 440 && mouseY >= 285 && mouseY <= 325) {
-        cancel = 1;
-        changeValue = coin;
-        change_cal(changeValue);
-        coinNum[0] -= changeCoin[0];
-        coinNum[1] -= changeCoin[1];
-        coinNum[2] -= changeCoin[2];
-        int coinType_error = 0;
-        while (coinType_error < coinValue.length) {
-          if (coinNum[coinType_error] < 0) {
-            error = 2;
-          }
-          coinType_error++;
+    
+    /******************************************** Cancel ********************************************/
+    if (cancel == 0 && coin > 0 && mouseX >= 370 && mouseX <= 440 && mouseY >= 285 && mouseY <= 325) {
+      cancel = 1;
+      changeValue = coin;
+      history_name[history] = "CANCEL";
+      history_price[history] = 0;
+      history_insertCoin[history] = coin;
+      history_change[history] = coin;
+      history +=1 ;
+      if (history > 5) {
+        int num = 0;
+        while (num < history_name.length-1) {
+          history_name[num] = history_name[num+1];
+          history_price[num] = history_price[num+1];
+          history_insertCoin[num] = history_insertCoin[num+1];
+          history_change[num] = history_change[num+1];
+          num++;
         }
+        history = 5;
       }
-      /**********************************************************************************************/
+      change_cal(changeValue);
+      coinNum[0] -= changeCoin[0];
+      coinNum[1] -= changeCoin[1];
+      coinNum[2] -= changeCoin[2];
+      error = 0;
     }
+    /**********************************************************************************************/
   }
   if (page == 2) {
     if (error != 2) {
@@ -360,6 +385,26 @@ void mousePressed() {
         coinType_control++;
       }
       /*****************************************************************************************************************************************/
+    }  
+    int[] sold_default = {0, 0, 0, 0, 0};
+    int[] productNum_default = {50, 50, 50, 50, 50};
+    int[] coinNum_default = {50, 50, 50};
+    if (mouseX >= 700 && mouseX <= 700+140 && mouseY >= 350 && mouseY <= 350+50) {
+      soldProduct = sold_default;
+      productNum = productNum_default;
+      coinNum = coinNum_default;
+      coin = 0;
+      history = 0;
+      error = 0;
+      cancel = 0;
+      page = 1;
+    }
+    if (mouseX >= 700 && mouseX <= 700+140 && mouseY >= 275 && mouseY <= 275+50) {
+      soldProduct = sold_default;
+      coin = 0;
+      history = 0;
+      error = 0;
+      cancel = 0;
     }
   }
 }
@@ -385,6 +430,7 @@ void admin_display() {
   int x = 20, y = 20;
   productNum_control(x, y);
   coin_control(x, y+250);
+  history();
 }
 
 
@@ -410,7 +456,7 @@ void productNum_control(int x, int y) {
     text(productPrice[num]+" Baht", x+375, y);
     textAlign(RIGHT, TOP);
     text(soldProduct[num], x+515, y);
-    text(soldValue(num)+" Baht", x+650, y);
+    text(soldProduct[num]*productPrice[num]+" Baht", x+650, y);
     y += 35;
     num++;
   }
@@ -439,7 +485,7 @@ void coin_control(int x, int y) {
   }
   fill(#880088);
   textAlign(LEFT, TOP);
-  text("Value = "+value+" Baht",x,y);
+  text("Value = "+value+" Baht", x, y);
 }
 
 void controlButton(int x, int y, int buttonWidth, int buttonHeight, int buttonColor, String text, int textColor) {
@@ -451,8 +497,47 @@ void controlButton(int x, int y, int buttonWidth, int buttonHeight, int buttonCo
   text(text, x+(buttonWidth/2), y+(buttonHeight/2.5));
 }
 
-int soldValue(int num) {
-  int value = 0;
-  value = soldProduct[num]*productPrice[num];
-  return value;
+
+void history() {
+  int x = 320, y = 250;
+  int historyBox_width = 350, historyBox_height = 135;
+  fill(255);
+  rect(x, y+20, historyBox_width, historyBox_height);
+  fill(0);
+  text("History", x, y);
+  text("Product", x+(historyBox_width/20), y+25);
+  text("Price", x+(historyBox_width/2.5), y+25);
+  text("Coin", x+(historyBox_width/1.65), y+25);
+  text("Change", x+(historyBox_width/1.25), y+25);
+  int textY = y+50;
+  int count = 0;
+  while (count < history) {
+    fill(#004400);
+    textAlign(LEFT, TOP);
+    text(history_name[count], x+(historyBox_width/20), textY);
+    textAlign(CENTER, TOP);
+    text(history_price[count], x+(historyBox_width/2.2), textY);
+    text(history_insertCoin[count], x+(historyBox_width/1.52), textY);
+    text(history_change[count], x+(historyBox_width/1.12), textY);
+    textY += 20;
+    count++;
+  }
+}
+
+void resetMachine_button() {
+  strokeWeight(3);
+  fill(0);
+  rect(700, 275, 140, 50);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text("Reset\nMachine", 770, 300);
+}
+
+void resetSim_button() {
+  strokeWeight(3);
+  fill(0);
+  rect(700, 350, 140, 50);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text("Reset\nSimulator", 770, 375);
 }
