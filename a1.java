@@ -35,8 +35,9 @@ Error
 
 *********************************************************************************************************************************************/
 
-int coin = 0;
 
+int coin = 0;
+int[] coinInsert = {0, 0, 0};
 /**** Array of Product **********************************************************************************************************************/
 //  Product index 0 = Math 1
 //  Product index 1 = ProFun
@@ -69,9 +70,10 @@ int[] history_change = {0, 0, 0, 0, 0, 0};
 int cancel = 0;
 int error = 0;
 int page = 1;
-
-void draw() {
+void setup() { 
   size(850, 450);
+}
+void draw() {
   background(#DDFFFF);
   textSize(15);
   if (page == 1) {
@@ -109,8 +111,8 @@ void coin(int x, int y) {
   int num = 0;
   int buttonColor;
   fill(50);
-  textAlign(CENTER,CENTER);
-  text("Insert Coin",x+50,y);
+  textAlign(CENTER, CENTER);
+  text("Insert Coin", x+50, y);
   while (num < coinValue.length) {
     if (coinNum[num] < 200) {
       buttonColor = 255;
@@ -234,6 +236,9 @@ void outletBox(int x, int y) {
     showProduct(x+65, y+5, productName_in_outletBox);
     if (mousePressed && buttonPosition(x, y, outletBoxWidth, outletBoxHeight)) {
       product_in_outletBox = 0;
+      for(int i = 0; i< coinInsert.length;i++){
+        coinInsert[i] = 0;
+      }
     }
   }
 }
@@ -263,7 +268,7 @@ void statusDisplay(int x, int y) {
   if (coin == 0 && cancel == 0 && product_in_outletBox == 0 && error == 0) {
     text("Please Insert Coin", x+(display_width/2), y+(display_height/2));
   } else if (coin > 0 && cancel == 0 && error == 0 &&  product_in_outletBox == 0) {
-    text("Coin "+coin, x+(display_width/2), y+(display_height/2));
+    text("Coin "+coin+"\n10 Coin "+coinInsert[2]+"\n5 Coin "+coinInsert[1]+"\n1 Coin "+coinInsert[0], x+(display_width/2), y+(display_height/2));
   } else if (product_in_outletBox == 1) {
     text("Change "+changeValue+" Baht\n| 10 coin : "+changeCoin[2]+" | 5  coin : "+changeCoin[1]+" |\n| 1  coin : "+changeCoin[0]+" |", x+(display_width/2), y+(display_height/3));
     fill(#FFFF00);
@@ -350,7 +355,7 @@ void coin_control(int x, int y) {
     text(coinValue[coinType]+" coin : "+coinNum[coinType]+"/200", x, y);
     controlButton(x+150, y, 20, 20, 4, 0, #FF8888, "-", #FF0000);
     controlButton(x+175, y, 20, 20, 4, 0, #448844, "+", #00FF00);
-    controlButton(x+200, y, 70, 20, 4, 0, #FFFF99, "Get Coin", #FF8800);
+    controlButton(x+200, y, 70, 20, 4, 0, #FFFF99, str(coinValue[coinType]*coinNum[coinType]), #FF8800);
     value += coinValue[coinType]*coinNum[coinType];
     y += 30;
     coinType++;
@@ -409,6 +414,7 @@ void mousePressed() {
       if (cancel == 0 && error == 0 && coinNum[coinType_insert] < 200 && product_in_outletBox == 0 && buttonPosition(720, insertcoin_posY, 100, 40)) {
         coin += coinValue[coinType_insert];
         coinNum[coinType_insert] += 1;
+        coinInsert[coinType_insert] += 1;
       }
       insertcoin_posY += 50;
       coinType_insert++;
@@ -417,6 +423,9 @@ void mousePressed() {
 
     /*********************************************************************************** Cancel ***********************************************************************************/
     if (cancel == 0 && coin > 0 && buttonPosition(360, 285, 70, 40)) {
+      for(int i = 0; i< coinInsert.length;i++){
+        coinInsert[i] = 0;
+      }
       cancel = 1;
       changeValue = coin;
       history_name[history] = "CANCEL";
@@ -505,6 +514,9 @@ void mousePressed() {
     /******************************************************************************* Reset Machine *******************************************************************************/
     if (buttonPosition(700, 275, 140, 50)) {
       soldProduct = sold_default;
+      for(int i = 0; i< coinInsert.length;i++){
+        coinInsert[i] = 0;
+      }
       coin = 0;
       history = 0;
       error = 0;
@@ -517,6 +529,9 @@ void mousePressed() {
       soldProduct = sold_default;
       productNum = productNum_default;
       coinNum = coinNum_default;
+      for(int i = 0; i< coinInsert.length;i++){
+        coinInsert[i] = 0;
+      }
       coin = 0;
       history = 0;
       error = 0;
